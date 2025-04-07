@@ -9,7 +9,16 @@ import { CHAIN_ID } from "./consts";
 import isDeployedSmartWallet from "./isDeploySmartWallet";
 import deploySmartWallet from "./deploySmartWallet";
 
-Coinbase.configure(JSON.parse(process.env.COINBASE_CONFIGURATION as string));
+// Provide a default configuration if environment variable is missing
+const coinbaseConfig = process.env.COINBASE_CONFIGURATION 
+  ? JSON.parse(process.env.COINBASE_CONFIGURATION as string)
+  : {
+      apiVersion: "v3",
+      apiKey: "your-api-key",
+      cloudUrl: "https://api.wallet.coinbase.com"
+    };
+
+Coinbase.configure(coinbaseConfig);
 
 async function getSmartWallet(): Promise<SmartWallet | null> {
   try {
@@ -20,7 +29,7 @@ async function getSmartWallet(): Promise<SmartWallet | null> {
     const data = await response.json();
     const smartwallet = data?.accounts?.[0];
 
-    if (smartwallet.baseContractAddress) {
+    if (smartwallet && smartwallet.baseContractAddress) {
       const wallet = toSmartWallet({
         signer: owner,
         smartWalletAddress: smartwallet.baseContractAddress,
@@ -42,7 +51,7 @@ async function getSmartWallet(): Promise<SmartWallet | null> {
     });
     return wallet;
   } catch (error) {
-    console.error(error);
+    console.error("Error in getSmartWallet:", error);
     return null;
   }
 }
